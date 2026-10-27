@@ -40,7 +40,7 @@ echo "deploy: installing the server"
 $PYTHON -m venv "$RELEASE/venv"
 PY="$RELEASE/venv/bin/python"                          # Mac and Linux
 [ -f "$PY" ] || PY="$RELEASE/venv/Scripts/python.exe"  # Windows
-"$PY" -m pip install --quiet "$RELEASE/pyftpdlib"
+"$PY" -m pip install --quiet --disable-pip-version-check "$RELEASE/pyftpdlib"
 
 # 5. Start the server in the background.
 "$PY" -m pyftpdlib --interface "$HOST" --port "$PORT" --write --directory "$DATA" \
