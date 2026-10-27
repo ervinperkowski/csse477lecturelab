@@ -11,6 +11,18 @@ source pipeline.conf     # HOST, PORT, FTP_USER, FTP_PASS, DEPLOY
 TAG=$1
 RELEASE="$DEPLOY/$TAG"   # a clean folder for this version
 DATA="$DEPLOY/data"      # uploads, shared by every version, so deploying never deletes them
+
+# Step 3 below deletes $RELEASE. Check here that $RELEASE can only ever be a
+# folder inside the deploy folder, so a bad tag or a broken pipeline.conf can
+# never turn that into a delete of something else.
+case "$DEPLOY" in
+  "" | "/") echo "deploy: pipeline.conf must set DEPLOY to a real folder (got '$DEPLOY')"; exit 1 ;;
+  /*)       ;;   # absolute path, good
+  *)        echo "deploy: DEPLOY in pipeline.conf must be an absolute path (got '$DEPLOY')"; exit 1 ;;
+esac
+case "$TAG" in
+  "" | */* | *..*) echo "deploy: '$TAG' is not a usable tag name"; exit 1 ;;
+esac
 PYTHON=python
 command -v python > /dev/null || PYTHON=python3
 
@@ -30,6 +42,9 @@ fi
 
 # 3. Copy exactly what the tag points at into a clean folder.
 echo "deploy: copying $TAG into $RELEASE"
+if [ "$RELEASE" = "/" ] || [ "$RELEASE" = "$DEPLOY" ] || [ "$RELEASE" = "$DATA" ]; then
+  echo "deploy: refusing to delete $RELEASE"; exit 1
+fi
 rm -rf "$RELEASE"
 mkdir -p "$RELEASE" "$DATA"
 git archive "$TAG" | tar -x -C "$RELEASE"
