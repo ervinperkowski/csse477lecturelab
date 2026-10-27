@@ -23,8 +23,19 @@ esac
 case "$TAG" in
   "" | */* | *..*) echo "deploy: '$TAG' is not a usable tag name"; exit 1 ;;
 esac
-PYTHON=python
-command -v python > /dev/null || PYTHON=python3
+# Find a Python that actually runs. Checking that the name exists is not
+# enough: Windows ships a stub called "python" that is on the PATH but only
+# opens the Microsoft Store, so running it gives "Permission denied". Try
+# each name and keep the first one that can execute something.
+PYTHON=""
+for candidate in python3 python py; do
+  if "$candidate" -c '' 2> /dev/null; then PYTHON=$candidate; break; fi
+done
+if [ -z "$PYTHON" ]; then
+  echo "deploy: no working Python 3 found. Install Python 3 and make sure"
+  echo "        'python3 --version' prints a version in this shell."
+  exit 1
+fi
 
 # 1. A version is a git tag, not whatever is in your working copy.
 if ! git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null; then
